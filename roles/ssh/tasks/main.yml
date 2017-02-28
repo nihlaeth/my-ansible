@@ -1,3 +1,20 @@
+- name: set ssh port
+  replace:
+    path: /etc/ssh/sshd_config
+    regexp: "^#? ?Port [0-9]*$"
+    replace: "Port {{ ansible_port }}"
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+- name: disable ssh root login
+  replace:
+    path: /etc/ssh/sshd_config
+    regexp: "^#? ?PermitRootLogin (yes|no)$"
+    replace: "PermitRootLogin no"
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['local']
 - name: copy our public key to a remote host
   authorized_key:
     user: nihlaeth
@@ -24,6 +41,7 @@
     - root
     - nihlaeth
   register: ssh_pub_key
+  changed_when: False
 - name: Authorize key with GitHub
   local_action:
     module: github_key
