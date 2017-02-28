@@ -1,21 +1,33 @@
-- name: create .ssh directory for user root
+- name: copy our public key to a remote host
+  authorized_key:
+    user: nihlaeth
+    state: present
+    key: "{{ lookup('file', '/root/.ssh/persephone.pub') }}"
+  when: ansible_hostname in groups['unix']
+- name: create .ssh directory
   file:
-    path: /root/.ssh
+    path: ~/.ssh
     state: directory
-    owner: root
-    group: root
-    mode: 0600
+    mode: 0700
+    owner: "{{ item }}"
+  become_user: "{{ item }}"
   become: true
-  when: host in groups['linux']
-- name: write ssh config for user root
+  when: ansible_hostname in groups['unix']
+  with_items:
+    - root
+    - nihlaeth
+- name: write ssh config
   template:
     src: config.j2
     backup: yes
-    dest: /root/.ssh/config
-    group: root
-    mode: 0600
-    owner: root
+    dest: ~/.ssh/config
+    mode: 0700
+    owner: "{{ item }}"
+  become_user: "{{ item }}"
   become: true
   when:
-    - host in groups['local']
-    - host in groups['linux']
+    - ansible_hostname in groups['local']
+    - ansible_hostname in groups['unix']
+  with_items:
+    - root
+    - nihlaeth

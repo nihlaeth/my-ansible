@@ -9,7 +9,7 @@ Identityfile ~/.ssh/{{ ansible_hostname }}
 {% endfor %}
 Host heraboot
 Hostname {{ hostvars['hera']['boot_ip'] }}
-KeyAlgorithms +diffie-hellman-group1-sha1
+KexAlgorithms +diffie-hellman-group1-sha1
 User root
 Port 22
 IdentityFile ~/.ssh/{{ ansible_hostname }}
