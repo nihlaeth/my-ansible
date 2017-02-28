@@ -4,25 +4,40 @@
     state: present
     key: "{{ lookup('file', '/root/.ssh/persephone.pub') }}"
   when: ansible_hostname in groups['unix']
-- name: test for presence of ssh keys
-  stat:
-    path: "~/.ssh/{{ ansible_hostname }}"
+- name: generate ssh key
+  shell: 'ssh-keygen -f ~/.ssh/{{ ansible_hostname }} -q -N ""'
+  args:
+      creates: "~/.ssh/{{ ansible_hostname }}"
   become_user: "{{ item }}"
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+  with_items:
+    - root
+    - nihlaeth
+- name: Read SSH public key to authorize github
+  shell: "cat ~/.ssh/{{ ansible_hostname }}.pub"
+  become_user: "{{ item }}"
+  become: true
   when: ansible_hostname in groups['unix']
   with_items:
     - root
     - nihlaeth
-  register: keys
-- name: generate ssh key
-  user:
-    name: "{{ item.item }}"
-    generate_ssh_key: yes
-    ssh_key_file: ".ssh/{{ ansible_hostname }}"
-  become_user: "{{ item.item }}"
+  register: ssh_pub_key
+- name: Authorize key with GitHub
+  local_action:
+    module: github_key
+    name: "{{ ansible_hostname }}-{{ item.user }}"
+    token: '{{ github_access_token }}'
+    pubkey: '{{ item.key }}'
+  become_user: "{{ item.user }}"
+  become: true
   when:
     - ansible_hostname in groups['unix']
-    - not item.stat.exists
-  with_items: "{{ keys.results }}"
+  with_items:
+    - {'user': 'root', 'key': "{{ ssh_pub_key.results[0].stdout }}"}
+    - {'user': 'nihlaeth', 'key': "{{ ssh_pub_key.results[1].stdout }}"}
+  ignore_errors: yes
 - name: create .ssh directory
   file:
     path: ~/.ssh
