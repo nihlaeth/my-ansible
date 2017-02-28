@@ -1,0 +1,21 @@
+- name: create .ssh directory for user root
+  file:
+    path: /root/.ssh
+    state: directory
+    owner: root
+    group: root
+    mode: 0600
+  become: true
+  when: host in groups['linux']
+- name: write ssh config for user root
+  template:
+    src: config.j2
+    backup: yes
+    dest: /root/.ssh/config
+    group: root
+    mode: 0600
+    owner: root
+  become: true
+  when:
+    - host in groups['local']
+    - host in groups['linux']

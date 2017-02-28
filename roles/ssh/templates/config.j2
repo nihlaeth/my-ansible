@@ -1,0 +1,32 @@
+# {{ ansible_managed }} - do not edit manually
+{% for host in groups['linux'] %}
+Host {{ host }}
+HostName {{ hostvars[host]['ansible_host'] }}
+User {{ hostvars[host]['ansible_user'] }}
+Port {{ hostvars[host]['ansible_port'] }}
+Identityfile ~/.ssh/{{ ansible_hostname }}
+
+{% endfor %}
+Host heraboot
+Hostname {{ hostvars['hera']['boot_ip'] }}
+KeyAlgorithms +diffie-hellman-group1-sha1
+User root
+Port 22
+IdentityFile ~/.ssh/{{ ansible_hostname }}
+
+Host herabackup
+Hostname {{ hostvars['hera']['ansible_host'] }}
+User {{ ansible_hostname }}
+Port 4848
+IdentityFile ~/.ssh/{{ ansible_hostname }}
+
+Host herabackuproot
+Hostname {{ hostvars['hera']['ansible_host'] }}
+User {{ ansible_hostname }}-root
+Port 4848
+IdentityFile ~/.ssh/{{ ansible_hostname }}
+
+Host github.com
+HostName github.com
+IdentityFile ~/.ssh/{{ ansible_hostname }}
+User git
