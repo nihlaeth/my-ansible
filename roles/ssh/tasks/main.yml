@@ -4,6 +4,25 @@
     state: present
     key: "{{ lookup('file', '/root/.ssh/persephone.pub') }}"
   when: ansible_hostname in groups['unix']
+- name: test for presence of ssh keys
+  stat:
+    path: "~/.ssh/{{ ansible_hostname }}"
+  become_user: "{{ item }}"
+  when: ansible_hostname in groups['unix']
+  with_items:
+    - root
+    - nihlaeth
+  register: keys
+- name: generate ssh key
+  user:
+    name: "{{ item.item }}"
+    generate_ssh_key: yes
+    ssh_key_file: ".ssh/{{ ansible_hostname }}"
+  become_user: "{{ item.item }}"
+  when:
+    - ansible_hostname in groups['unix']
+    - not item.stat.exists
+  with_items: "{{ keys.results }}"
 - name: create .ssh directory
   file:
     path: ~/.ssh
