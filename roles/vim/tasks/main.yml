@@ -25,3 +25,60 @@
     - ansible_hostname in groups['mine']
   with_items:
       - {'dest': 'syntastic', 'repo': 'git+ssh://git@github.com/scrooloose/syntastic'}
+      - {'dest': 'vim-abolish', 'repo': 'git+ssh://git@github.com/tpope/vim-abolish.git'}
+      - {'dest': 'vim-repeat', 'repo': 'git+ssh://git@github.com/tpope/vim-repeat'}
+      - {'dest': 'vim-dispatch', 'repo': 'git+ssh://git@github.com/tpope/vim-dispatch'}
+      - {'dest': 'vimoutliner', 'repo': 'git+ssh://git@github.com/vimoutliner/vimoutliner'}
+      - {'dest': 'vim-surround', 'repo': 'git+ssh://git@github.com/tpope/vim-surround'}
+      - {'dest': 'vim-test', 'repo': 'git+ssh://git@github.com/janko-m/vim-test'}
+      - {'dest': 'SimpylFold', 'repo': 'git+ssh://git@github.com/tmhedberg/SimpylFold'}
+      - {'dest': 'nerdcommenter', 'repo': 'git+ssh://git@github.com/scrooloose/nerdcommenter'}
+      - {'dest': 'molokai', 'repo': 'git+ssh://git@github.com/tomasr/molokai'}
+      - {'dest': 'indentpython.vim', 'repo': 'git+ssh://git@github.com/vim-scripts/indentpython.vim'}
+      - {'dest': 'nerdtree', 'repo': 'git+ssh://git@github.com/scrooloose/nerdtree'}
+      - {'dest': 'vim-airline', 'repo': 'git+ssh://git@github.com/vim-airline/vim-airline'}
+      - {'dest': 'vim-airline-themes', 'repo': 'git+ssh://git@github.com/vim-airline/vim-airline-themes'}
+      - {'dest': 'ctrlp.vim', 'repo': 'git+ssh://git@github.com/ctrlpvim/ctrlp.vim'}
+      - {'dest': 'vim-fugitive', 'repo': 'git+ssh://git@github.com/tpope/vim-fugitive'}
+      - {'dest': 'vim-pathogen', 'repo': 'git+ssh://git@github.com/tpope/vim-pathogen'}
+      - {'dest': 'vim-signify', 'repo': 'git+ssh://git@github.com/mhinz/vim-signify'}
+      - {'dest': 'vim-help-random', 'repo': 'git+ssh://git@github.com/motemen/vim-help-random'}
+      - {'dest': 'ultisnips', 'repo': 'git+ssh://git@github.com/SirVer/ultisnips'}
+      - {'dest': 'vim-snippets', 'repo': 'git+ssh://git@github.com/honza/vim-snippets'}
+      - {'dest': 'vim-lawrencium', 'repo': 'https://bitbucket.org/ludovicchabant/vim-lawrencium'}
+      - {'dest': 'Vim-Jinja2-Syntax', 'repo': 'git+ssh://git@github.com/Glench/Vim-Jinja2-Syntax'}
+- name: install pylint
+  pip:
+    name: pylint
+    state: latest
+  become: true
+- name: test for vim>=8.0
+  shell: "vim --version | grep -o 'IMproved 8.[0-9.]\\+'"
+  register: vim8
+  failed_when: False
+  changed_when: False
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+- name: "update vim 8 plugins"
+  hg:
+    repo: "{{ item.repo }}"
+    dest: "/etc/vim/plugin/{{ item.dest }}"
+  become: true
+  when:
+    - vim8.rc == 0
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+  with_items:
+    - {'dest': 'YouCompleteMe', 'repo': 'git+ssh://git@github.com/Valloric/YouCompleteMe'}
+- name: "delete vim 8 plugins"
+  file:
+    path: "/etc/vim/plugin/{{ item }}"
+    state: absent
+  become: true
+  with_items:
+    - YouCompleteMe
+  when:
+    - vim8.rc != 0
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']

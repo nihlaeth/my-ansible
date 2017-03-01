@@ -15,3 +15,10 @@
     name: hg-git
     state: latest
   become: true
+- name: install git slackware
+  slackpkg:
+    name: git
+    state: present
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
