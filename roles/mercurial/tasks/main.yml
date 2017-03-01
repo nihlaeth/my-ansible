@@ -1,3 +1,24 @@
+- name: create mercurial configuration directory
+  file:
+    path: /etc/mercurial/hg-plugins
+    state: directory
+    mode: 0755
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+- name: write mercurial config
+  template:
+    src: "{{ item }}.j2"
+    backup: yes
+    dest: "/etc/mercurial/{{ item }}"
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+  with_items:
+    - hgignore
+    - hgrc
 - name: remove mercurial slackware
   slackpkg:
     name: mercurial
@@ -15,10 +36,30 @@
     name: hg-git
     state: latest
   become: true
-- name: install git slackware
+- name: install hgsubversion
+  pip:
+    name: hgsubversion
+    state: latest
+  become: true
+- name: install subvertpy
+  pip:
+    name: subvertpy
+    state: latest
+  become: true
+- name: install git and subversion slackware
   slackpkg:
-    name: git
+    name: git,subversion,serf,icu4c
     state: present
   become: true
   when:
     - ansible_hostname in groups['slackware']
+- name: fetch mercurial plug-ins
+  hg:
+    repo: "{{ item.repo }}"
+    dest: "/etc/mercurial/hg-plugins/{{ item.dest }}"
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+  with_items:
+      - {'dest': 'hg-prompt', 'repo': 'http://bitbucket.org/sjl/hg-prompt/'}

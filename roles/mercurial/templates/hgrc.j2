@@ -1,0 +1,282 @@
+# {{ ansible_managed }} - do not edit manually
+# hg version: 3.7.1
+[ui]
+
+username = nihlaeth <info@nihlaeth.nl>
+verbose = False
+ignore = /etc/mercurial/hgignore
+editor = vim
+interface = curses
+
+## To go back to using conflict markers, uncomment this line.
+merge = internal:merge
+mergemarkers = detailed
+
+[web]
+# allow_push = *
+push_ssl = false
+stripes=4
+
+[diff]
+git = True
+
+[extensions]
+rebase =
+hgext.extdiff =
+hgext.histedit =
+color =
+churn =
+# debugshell = $HOME/lib/mercurial-main/contrib/debugshell.py
+# evolve = $HOME/lib/hg-evolve/hgext/evolve.py
+hggit = /usr/lib64/python2.7/site-packages/hggit
+hgsubversion = /usr/lib64/python2.7/site-packages/hgsubversion
+subvertpy = /usr/lib64/python2.7/site-packages/subvertpy
+purge =
+pager =
+prompt = /etc/mercurial/hg-plugins/hg-prompt/prompt.py
+# prompt = /root/src/hg-prompt/prompt.py
+progress =
+record =
+share =
+shelve =
+
+[pager]
+pager = LESS='FRX' less
+ignore = version, update, serve, record
+
+## Commands that I added to the default set: help, heads
+attend = annotate, cat, diff, export, log, glog, logg, slog, gitlog,
+    filelog, qdiff, help, heads
+quiet = True
+
+[extdiff]
+cmd.extdiff = meld
+
+[merge-tools]
+kdiff3.args=--L1 base --L2 local --L3 other $base $local $other -o $output
+
+[alias]
+
+# First, the various flavours of logging aliases
+
+glog = log --graph
+
+logg = log --graph
+
+# The two blank lines atop the tip revision: I have a fat prompt. When I exit a
+# pager like `less`, the top two lines scroll off the screen, which is annoying
+# when you want to copy the tip's node id.
+slog = log --graph --template '\
+    {ifcontains("tip", tags, "\n\n")}\
+    {label("log.branch", ifeq(branch, "default", "", branch))}\
+    {ifeq(branch, "default", "", " ")}\
+    {label("log.bookmark", bookmarks)}\
+    {ifeq(bookmarks, "", "", " ")}\
+    {label("log.tag", tags)}\
+    {ifeq(tags, "", "", " ")}\
+    -- \
+    {label("grep.user", author|person)} -- \
+    {label("log.date", date|shortdate)} -- {rev}:{node|short}\n\
+    {label("log.desc", desc|firstline)}'
+
+testlog = log --graph --template '{label("log.branch", ifeq(branch, "default", "", branch))}'
+
+gitlog = log --graph --template '\
+    {rev}:{node|short} git:{gitnode|short} \
+    {label("log.branch", ifeq(branch, "default", "", branch))} \
+    {label("log.bookmark", bookmarks)} \
+    {label("log.tag", tags)} {label("grep.user", author|emailuser)} \
+    {label("log.desc", desc|firstline)}'
+
+filelog = log --graph --template '\
+    {label("log.branch", branch)} -- {label("grep.user", author|user)} -- \
+    {label("log.date", date|shortdate)} -- {rev}:{node|short}\n\
+    {label("log.desc", desc)}\n\
+    {files % "{rev}: {file}\n"}\n\n'
+
+# Then, all the other aliases, sorted alphabetically.
+
+commmit = commit
+
+# hg explicitmerge
+# ----------------
+#
+# Given a history like this:
+#     o feature
+#     |
+#     o
+#     |
+#     o master
+#     |
+#     ~
+# It is desirable to be able to explicitly merge the feature into master:
+#     o merge feature into master
+#     |\
+#     | o feature
+#     | |
+#     | o
+#     |/
+#     o master
+#     |
+#     ~
+# Mercurial normally doesn't allow that, and expects you to just move the
+# master bookmark forward (a 'fast forward merge'). Let's create an explicit
+# merge commit, instead.
+
+explicitmerge = ! \
+    incoming=$(echo $HG_ARGS | sed 's/.*explicitmerge //'); \
+    # Abort if the current commit and the incoming one are on diverged branches
+    if /usr/bin/test \
+        $( \
+            $HG log -r "($incoming and descendants(.)) or ($incoming and ancestors(.))" \
+            --template 'x' \
+        ) != 'x' \
+    ; then \
+        echo "The current commit and $incoming are on different branches"; \
+        echo "Use an ordinary merge."; \
+        exit 1; \
+    fi; \
+    # Merge the incoming into the current commit
+    $HG debugsetparents . $incoming \
+    # Use the code as present in the more recent parent.
+    $HG revert --all -r "last(sort($incoming or ., date))" \
+    # Commit the result
+    $HG commit
+
+# Quickly get a feature's log
+f = !$HG slog -r "feature($(echo $HG_ARGS| sed 's/^f //'))"
+
+# The pre-push.outgoing fails with `hg push -B mybookmark`, which is often used
+# with git repos. `hg gitpush -B mybookmark` does its own, manual, outgoing
+# call. Only problem is that it doesn't automatically find the target repo.
+gitpush = !$HG outgoing --graph; $HG $(echo $HG_ARGS | sed 's/gitpush/push/') --config 'hooks.pre-push.outgoing='
+
+# Example invocation:
+#    hg git-delete-remote default/bad-branch
+gitremotedelete = ! \
+    remote=`echo $HG_ARGS | sed 's_/.*__' | sed 's_.* __'`; \
+    branch=`echo $HG_ARGS | sed 's_.*/__'`; \
+    remote_url=$($HG paths $remote | sed 's_^git+ssh://__'); \
+    git_dir=$($HG root)/.hg/git; \
+    # Delete the remote branch
+    git --git-dir=$git_dir push $remote_url :$branch && \
+    # Delete local ref to remote branch
+    git --git-dir=$git_dir branch -rd $remote/$branch && \
+    # Delete local branch
+    git --git-dir=$git_dir branch -D $branch
+    echo "Don't forget to run "'`'"hg bookmark -d $branch"'`'
+
+heads = heads --template '{branch} : {rev}\n'
+headss = !$HG heads --template '{branch} : {rev} : {node|short}\n' | sort | column -s: -t
+
+# Quickly create a new test commit. E.g. commit 3 will create a file `f3`. This
+# is nice when you want to quickly create some history in a test repository.
+# The naming guideline comes from here:
+# https://www.mercurial-scm.org/wiki/WritingTests#A_naming_scheme_for_test_elements
+newcommit = !
+    # new rev number: current tip commit + 1
+    rev=$(echo $($HG id -n -r tip) + 1 | bc);
+    touch f$rev;
+    hg add f$rev;
+    hg commit -m $rev;
+
+relist = resolve -l
+remark = resolve -m
+reunmark = resolve -u
+
+praise = blame --quiet --user --date --number
+
+# Open the repository's hgrc file, or else the user hgrc
+rc = !$HG config --local 2> /dev/null || $HG config --edit
+
+stash = !echo 'You meant `hg shelve`'
+
+tagdate = log -r 'tag()' --template '\
+    {label("log.date", date|shortdate)} -- {rev} -- {label("log.tag", tags)}'
+tagdates = tagdate
+
+# hg versions:
+# Place multiple versions of file in directory, for easy comparison when
+# resolving conflicts.
+# * file      -- the file, possibly half-merged already
+# * file.local -- file as it is in the receiving (current) branch
+# * file.other -- file as it is in the donating (merged) branch
+# * file.base  -- file as it is in the first common ancestor
+versions = ! \
+    f=${HG_ARGS#versions } && \
+    p1=$($HG id --id -r 'p1()') && \
+    p2=$($HG id --id -r 'p2()') && \
+    $HG cat -r $p1 $f > $f.local && \
+    echo $f.local; \
+    $HG cat -r $p2 $f > $f.other && \
+    echo $f.other; \
+    $HG cat -r "ancestor($p1, $p2)" $f > $f.base && \
+    echo $f.base
+
+wip = log --graph -r wip --style wip
+
+[hooks]
+# After pulling, show a graph of the changes that came in.
+pre-pull.incoming = $HG id -n -r tip > $($HG root)/.hg/tip-pre-pull
+post-pull.incoming = OLDTIP=$(cat $($HG root)/.hg/tip-pre-pull) &&
+    $HG slog --pager=none -r "rev($OLDTIP):tip - rev($OLDTIP)"
+
+# Show graph of outgoing changes before pushing
+# zshell has a nifty ${env_variable#string to remove from start} syntax.
+# Also ${envvar%string to remove from end}.
+pre-push.outgoing = $HG outgoing --graph `echo ${HG_ARGS#push} | sed 's/--new-branch//'`
+
+# Abort commits that introduce trailing whitespace.
+# pretxncommit.whitespace = $HOME/dotfiles/hg/check_trailing_whitespace.py
+# pretxncommit.whitespace = python:$HOME/dotfiles/hg/whitespace.py:hook
+
+post-init.username = echo '[Set your username in the .hg/hgrc]'
+post-clone.username = echo '[Set your username in the .hg/hgrc]'
+
+# Before running extdiff, print the id of each revision
+pre-extdiff.rev_ids = \
+    $HG id -nibtB -r "$(echo $HG_ARGS | sed 's/.* -r \(.*\) -r \(.*\)/\1/')"; \
+    $HG id -nibtB -r "$(echo $HG_ARGS | sed 's/.* -r \(.*\) -r \(.*\)/\2/')";
+
+[revsetalias]
+wip = (parents(not public()) or not public() or . or head()) and not closed()
+family($1) = $1 or parents($1) or children($1)
+feature($1) = _firstancestors($1) and not _firstancestors(master)
+feat($1) = feature($1)
+# Compare p 'page' and pp 'pages': pp1 is 'first parents'.
+pp1($1) = _firstancestors($1)
+
+[color]
+mode = auto
+
+#Custom colours
+color.orange=202
+color.lightyellow=191
+color.darkorange=220
+color.brightyellow=226
+
+#Colours for each label
+log.author=cyan
+log.branch=green
+log.summary=white
+log.desc=yellow
+log.bookmark=cyan bold
+log.tag=green bold
+log.graph=blue
+log.date=red
+
+changeset.public=
+changeset.secret=blue bold
+changeset.draft=yellow
+
+desc.here=bold blue_background
+
+[hostfingerprints]
+github.com = a0:c4:a7:46:00:ed:a7:2d:c0:be:cb:9a:8c:b6:07:ca:58:ee:74:5e
+bitbucket.org = 3f:d3:c5:17:23:3c:cd:f5:2d:17:76:06:93:7e:ee:97:42:21:14:aa
+
+
+# Include private settings
+# ========================
+
+%include ~/dotfiles/secrets/hgrc
