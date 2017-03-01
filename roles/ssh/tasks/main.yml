@@ -35,6 +35,18 @@
     state: present
     key: "{{ lookup('file', '/root/.ssh/persephone.pub') }}"
   when: ansible_hostname in groups['unix']
+- name: create .ssh directory
+  file:
+    path: ~/.ssh
+    state: directory
+    mode: 0700
+    owner: "{{ item }}"
+  become_user: "{{ item }}"
+  become: true
+  when: ansible_hostname in groups['unix']
+  with_items:
+    - root
+    - nihlaeth
 - name: generate ssh key
   shell: 'ssh-keygen -f ~/.ssh/{{ ansible_hostname }} -q -N ""'
   args:
@@ -70,18 +82,6 @@
     - {'user': 'root', 'key': "{{ ssh_pub_key.results[0].stdout }}"}
     - {'user': 'nihlaeth', 'key': "{{ ssh_pub_key.results[1].stdout }}"}
   ignore_errors: yes
-- name: create .ssh directory
-  file:
-    path: ~/.ssh
-    state: directory
-    mode: 0700
-    owner: "{{ item }}"
-  become_user: "{{ item }}"
-  become: true
-  when: ansible_hostname in groups['unix']
-  with_items:
-    - root
-    - nihlaeth
 - name: write ssh config
   template:
     src: config.j2
