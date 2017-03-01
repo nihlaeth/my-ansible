@@ -1,3 +1,13 @@
+- name: update ssh slackware
+  slackpkg:
+    name: openssl,openssh,libssh,openssl-solibs
+    state: latest
+    update_cache: true
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+  notify:
+    - restart ssh
 - name: set ssh port
   replace:
     path: /etc/ssh/sshd_config
