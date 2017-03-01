@@ -1,0 +1,27 @@
+- name: update vim slackware
+  slackpkg:
+    name: vim
+    state: latest
+    update_cache: true
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- name: create vim plugin directory
+  file:
+    path: /etc/vim/plugin
+    state: directory
+    mode: 0755
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+- name: update vim plugins
+  hg:
+    repo: "{{ item.repo }}"
+    dest: "/etc/vim/plugin/{{ item.dest }}"
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+  with_items:
+      - {'dest': 'syntastic', 'repo': 'git+ssh://git@github.com/scrooloose/syntastic'}
