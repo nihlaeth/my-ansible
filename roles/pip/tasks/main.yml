@@ -1,0 +1,60 @@
+- name: upgrade python slackware
+  slackpkg:
+    name: python
+    state: latest
+    update_cache: true
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- name: remove pip packages slackware
+  slackpkg:
+    name: pip,pysetuptools,python-setuptools
+    state: absent
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- name: test if pip is installed
+  find:
+    paths: /usr/lib64/python2.7/site-packages/pip
+  become: true
+  register: pip_install
+  when:
+    - ansible_hostname in groups['slackware']
+- name: transfer pip packages slackware
+  copy:
+    src: "{{ item }}"
+    dest: "~/{{ item }}"
+  become: true
+  with_items:
+    - get-pip.py
+  when:
+    - ansible_hostname in groups['slackware']
+    - pip_install.matched == 0
+- name: install pip packages slackware
+  command: "python ~/{{ item }}"
+  become: true
+  with_items:
+    - get-pip.py
+  when:
+    - ansible_hostname in groups['slackware']
+    - pip_install.matched == 0
+- name: remove pip packag files slackware
+  file:
+    path: "~/{{ item }}"
+    state: absent
+  become: true
+  with_items:
+    - get-pip.py
+  when:
+    - ansible_hostname in groups['slackware']
+    - pip_install.matched == 0
+- name: upgrade python packaging tools
+  pip:
+    name: "{{ item }}"
+    state: latest
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+  with_items:
+    - pip
+    - setuptools
