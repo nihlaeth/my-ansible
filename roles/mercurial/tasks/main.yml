@@ -1,0 +1,17 @@
+- name: remove mercurial slackware
+  slackpkg:
+    name: mercurial
+    state: absent
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- name: install mercurial
+  pip:
+    name: mercurial
+    state: latest
+  become: true
+- name: install hg-git
+  pip:
+    name: hg-git
+    state: latest
+  become: true
