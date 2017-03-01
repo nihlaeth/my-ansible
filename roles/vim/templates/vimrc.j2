@@ -1,0 +1,139 @@
+" {{ ansible_managed }} - do not edit manually
+runtime bundle/vim-pathogen/autoload/pathogen.vim
+execute pathogen#infect()
+
+let python_highlight_all=1
+syntax on
+
+set tabstop=8
+set expandtab
+set shiftwidth=4
+set softtabstop=4
+
+" capitalization
+nmap \c m`lb~``
+
+" fill empty messages for po files
+autocmd FileType po nmap <buffer> <C-K> :%s/\v^msgid "((\\"\|[^"])*)"\nmsgstr "\zs\ze"$/\1/g<CR>
+
+" title
+let g:modestr={
+    \ 'n': 'Normal',
+    \ 'no': 'Normal - operator pending',
+    \ 'v': 'Visual[char]',
+    \ 'V': 'Visual[line]',
+    \ '': 'Visual[block]',
+    \ 's': 'Select[char]',
+    \ 'S': 'Select[line]',
+    \ '': 'Select[block]',
+    \ 'i': 'Insert',
+    \ 'R': 'Replace',
+    \ 'Rv': 'Replace - virtual',
+    \ 'c': 'CL',
+    \ 'cv': 'CL[vim-ex]',
+    \ 'ce': 'CL[ex]',
+    \ 'r': 'Prompt[enter]',
+    \ 'rm': 'Prompt[more]',
+    \ 'r?': 'Prompt[confirm]',
+    \ '!': 'External',
+    \ }
+set title
+set titlestring=%{hostname()}\ VIM\ %{expand(\"%y\")}\ [%{&ft}]\ mode:%{g:modestr[mode()]}
+
+" highlight long lines
+:au BufWinEnter *.py let w:m1=matchadd('Search', '\%<81v.\%>77v', -1)
+:au BufWinEnter *.py let w:m2=matchadd('ErrorMsg', '\%>80v.\+', -1)
+
+" automatically compile lilypond files at save
+:autocmd BufWritePost *.ly !lilypond --include=$HOME/.voicetrainer/include %
+
+" line numbers
+set number
+set numberwidth=2
+
+" Wrapping
+set wrap              " Wrap lines to textwidth
+" set breakindent       " Wrapped lines should be indented, too.
+set showbreak=..       " Show a small indent marker
+set lbr               " If we do wrap, we want it at word boundaries
+set display=lastline  " Show all of the last line that fits
+
+" whitespace
+set list
+set listchars=tab:▸\ ,nbsp:·,trail:⬟,extends:❯,precedes:❮
+
+" colorschema
+syntax enable
+set background=dark
+colorscheme molokai
+
+" folding
+nnoremap <space> za
+
+" Simplyfold
+let g:SimpylFold_docstring_preview = 1
+
+{% if vim8.rc == 0 %}
+" completion
+let g:ycm_autoclose_preview_window_after_completion=1
+map <leader>g  :YcmCompleter GoToDefinitionElseDeclaration<CR>
+"python with virtualenv support
+let g:ycm_python_binary_path = 'python'
+
+{% endif %}
+" nerd tree
+let NERDTreeIgnore=['\.pyc$', '\~$', '\.midi$', '\.png$', '\.pdf$'] "ignore files in NERDTree
+autocmd StdinReadPre * let s:std_in=1
+autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
+autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | endif
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+
+" status line
+let g:airline_theme='molokai'
+let g:airline_powerline_fonts = 1
+set laststatus=2 " Always display the statusline in all windows
+set noshowmode " Hide the default mode text (e.g. -- INSERT -- below the statusline)
+
+" control p
+set wildignore+=*/tmp/*,*.so,*.swp,*.zip,*.midi,*.mid,*.png,*.pdf
+let g:ctrlp_working_path_mode = 'ra'
+
+
+" snippets
+let g:UltiSnipsExpandTrigger=",s"
+let g:UltiSnipsListSnippets=",l"
+let g:UltiSnipsJumpForwardTrigger=",f"
+let g:UltiSnipsJumpBackwardTrigger=",b"
+let g:UltiSnipsEditSplit = "horizontal"
+let g:UltiSnipsSnippetDirectories = ["UltiSnips", "snipps"]
+
+
+" Syntastic setup - static syntax checking
+let g:syntastic_python_checkers = ['pylint']
+let g:syntastic_cpp_checkers = ['cpplint']
+let g:syntastic_cpp_check_header = 1
+let g:syntastic_cpp_cpplint_exec = 'cpplint'
+
+set statusline+=%#warningmsg#
+set statusline+=%{SyntasticStatuslineFlag()}
+set statusline+=%*
+
+let g:syntastic_always_populate_loc_list = 1
+let g:syntastic_auto_loc_list = 1
+let g:syntastic_check_on_open = 1
+let g:syntastic_check_on_wq = 0
+let g:syntastic_aggregate_errors = 1
+
+" Python testing
+let test#python#runner = 'nose'
+let test#python#nose#executable = 'nosetests'
+let test#strategy = 'dispatch'
+let test#python#nose#options = {
+            \ 'suite': '-x --nologcapture',
+            \ 'nearest': '-x --nologcapture',
+            \ 'file': '-x --nologcapture',
+            \}
+
+" Highlight todo and fixme
+syn match myTodo contained "//\(todo\|fixme\)"
+hi def link myTodo Todo

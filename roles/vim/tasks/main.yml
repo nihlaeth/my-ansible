@@ -82,3 +82,12 @@
     - vim8.rc != 0
     - ansible_hostname in groups['unix']
     - ansible_hostname in groups['mine']
+- name: write vim config
+  template:
+    src: "vimrc.j2"
+    backup: yes
+    dest: "/etc/vimrc"
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
