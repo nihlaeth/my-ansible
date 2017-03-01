@@ -26,6 +26,20 @@
   become: true
   when:
     - ansible_hostname in groups['slackware']
+- name: install git and subversion slackware
+  slackpkg:
+    name: git,subversion,icu4c,apr-util,neon,sqlite
+    state: present
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- name: install git and subversion slackware
+  slackpkg:
+    name: serf
+    state: present
+  become: true
+  when:
+    - ansible_hostname in groups['slackware14.2']
 - name: install mercurial
   pip:
     name: mercurial
@@ -46,13 +60,6 @@
     name: subvertpy
     state: latest
   become: true
-- name: install git and subversion slackware
-  slackpkg:
-    name: git,subversion,serf,icu4c
-    state: present
-  become: true
-  when:
-    - ansible_hostname in groups['slackware']
 - name: fetch mercurial plug-ins
   hg:
     repo: "{{ item.repo }}"
