@@ -91,3 +91,13 @@
   when:
     - ansible_hostname in groups['unix']
     - ansible_hostname in groups['mine']
+- name: transfer vim snippets
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/vim/{{ item }}"
+  become: true
+  with_items:
+    - snipps
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']

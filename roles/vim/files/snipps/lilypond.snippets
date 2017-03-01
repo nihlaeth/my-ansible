@@ -1,0 +1,73 @@
+##############
+#  lilypond  #
+##############
+
+snippet poly "temporary polyphony" bsm
+<<
+	{
+		\voiceOne
+		${1:music}
+	}
+	\new Voice {
+		\voiceTwo
+		${2:music}
+	}
+>> \oneVoice
+endsnippet
+
+snippet bc "barnumbercheck" bsm
+\barNumberCheck #${1:1}
+endsnippet
+
+snippet repeat "repeat" bsm
+\repeat ${1:unfold} ${2:2} {
+	${3:music}
+}${4:
+\alternative {
+	{ % first ending
+		${5:music}
+	}
+	{ % second ending
+		${6:music}
+	}
+}}
+endsnippet
+
+snippet tag "tag" is
+-\tag ${1:midi} ${2:\sustainOn}
+endsnippet
+
+snippet = "variable" bsm
+${1:name} = ${2:\relative c${3:'} {
+	${4:music}
+}}
+endsnippet
+
+# TODO: add post_jump action and put instrument in books
+snippet instrument "instrument variable" bsm
+${1:name} = \transpose ${2:c} \voicetrainerKey \relative c${3:'} {
+	\global${4:
+	\cleff ${5:bass}}
+	${6:music}
+}
+endsnippet
+
+snippet #! "header for songs" bsm
+\include "articulate.ly"
+\include "color-pitch.ly"
+\include "predefined-guitar-fretboards.ly"
+\version "2.${1:19.${2:50}}
+% voicetrainer: measures = ${3:90}
+% voicetrainer: pages = ${4:4}
+\header {
+	title = "${5:title}"
+	composer = "${6:artist}"
+	arranger = "arranged by: ${7:Tamara van Haarlem}"
+}
+voicetrainerTempo = ${8:90}
+voicetrainerKey = ${9:c}
+
+global = {
+	\tempo 4=\voicetrainerTempo \time ${10:4/4} \key $9 ${11:\minor}
+}
+endsnippet

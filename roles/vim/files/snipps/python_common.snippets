@@ -1,0 +1,496 @@
+############
+#  global  #
+############
+global !p
+
+class Arg(object):
+	def __init__(self, arg):
+		self.arg = arg
+		self.default = None
+		self.type_ = None
+		if '=' in arg:
+			parts = arg.split('=')
+			arg = '' if len(parts) < 1 else parts[0].strip()
+			self.default = '' if len(parts) < 2 else parts[1].strip()
+		if ':' in arg:
+			parts = arg.split(':')
+			arg = '' if len(parts) < 1 else parts[0].strip()
+			self.type_ = '' if len(parts) < 2 else parts[1].strip()
+		self.name = arg.strip()
+
+	def __str__(self):
+		return self.name
+
+	def __unicode__(self):
+		return self.name
+
+	def is_kwarg(self):
+		return self.default is not None
+
+	def has_type(self):
+		return self.type_ is not None
+
+
+def get_args(arglist):
+	args = [Arg(arg) for arg in arglist.split(',') if arg]
+	args = [arg for arg in args if arg.name != 'self']
+
+	return args
+
+def get_attrs(attr_str):
+	attr_list = [attr.strip() for attr in attr_str.split('\n')]
+	to_document = []
+	for attr in attr_list:
+		if attr.startswith('_'):
+			continue
+		parts = attr.split('=')
+		if len(parts) == 0:
+			continue
+		to_document.append(parts[0].strip())
+	return to_document
+
+def triple_quotes_handle_trailing(snip, quoting_style):
+	"""
+	Generate triple quoted strings and handle any trailing quote char,
+	which might be there from some autoclose/autopair plugin,
+	i.e. when expanding ``"|"``.
+	"""
+	if not snip.c:
+		# Do this only once, otherwise the following error would happen:
+		# RuntimeError: The snippets content did not converge: …
+		_, col = vim.current.window.cursor
+		line = vim.current.line
+
+		# Handle already existing quote chars after the trigger.
+		_ret = '"' * 3
+		while True:
+			try:
+				nextc = line[col]
+			except IndexError:
+				break
+			if nextc == '"' and len(_ret):
+				_ret = _ret[1:]
+				col = col+1
+			else:
+				break
+		snip.rv = _ret
+	else:
+		snip.rv = snip.c
+
+
+def format_arg(arg, snip):
+	if arg.has_type():
+		snip += arg.name
+	else:
+		snip += "%s: TODO" % arg.name
+	snip >> 1
+	if arg.is_kwarg():
+		snip.rv += "{} optional".format(
+			',' if not arg.has_type() else ':')
+		snip += "TODO, defaults to %s" % arg.default
+	else:
+		snip += "TODO"
+	snip << 1
+
+def write_docstring_args(args, snip):
+	kwargs = [arg for arg in args if arg.is_kwarg()]
+	args = [arg for arg in args if not arg.is_kwarg()]
+
+	if len(args) > 0:
+		snip += "Parameters"
+		snip += "----------"
+		for arg in args:
+			format_arg(arg, snip)
+		snip.rv += '\n' + snip.mkline('', indent='')
+	if len(kwargs) > 0:
+		snip += "Keyword Arguments"
+		snip += "-----------------"
+
+		for kwarg in kwargs:
+			format_arg(kwarg, snip)
+		snip.rv += '\n' + snip.mkline('', indent='')
+
+
+def write_init_body(args, parents, snip):
+	parents = [p.strip() for p in parents.split(",")]
+	parents = [p for p in parents if p != 'object']
+
+	for p in parents:
+		snip += p + ".__init__(self)"
+	if len(parents) > 0:
+		snip.rv += '\n' + snip.mkline('', indent='')
+
+	for arg in args:
+		snip += "self._%s = %s" % (arg, arg)
+	if len(args) > 0:
+		snip.rv += '\n' + snip.mkline('', indent='')
+
+
+def write_slots_args(args, snip):
+	args = ['"_%s"' % arg for arg in args]
+	snip += '__slots__ = (%s,)' % ', '.join(args)
+
+
+def write_function_docstring(snip, args):
+	"""
+	Writes a function docstring in the numpy style.
+	"""
+	snip.rv += '"""'
+	snip += "TODO"
+	snip.rv += '\n' + snip.mkline('', indent='')
+	snip += "TODO"
+	snip.rv += '\n' + snip.mkline('', indent='')
+
+	if args:
+		write_docstring_args(args, snip)
+
+	snip += 'Raises'
+	snip += '------'
+	snip += 'TODO'
+	snip.rv += '\n' + snip.mkline('', indent='')
+
+	snip += 'Returns'
+	snip += '-------'
+	snip += 'TODO'
+	snip.rv += '\n' + snip.mkline('', indent='')
+
+	snip += 'Examples'
+	snip += '--------'
+	snip += '..doctest::'
+	snip.rv += '\n' + snip.mkline('', indent='')
+	snip >> 1
+	snip += '>>> TODO'
+	snip << 1
+
+	snip += '"""'
+
+def write_class_docstring(snip, attrs, args):
+	"""
+	Writes a class docstring in the numpy style.
+	"""
+	snip.rv += '"""'
+	snip += "TODO"
+	snip.rv += '\n' + snip.mkline('', indent='')
+	snip += "TODO"
+	snip.rv += '\n' + snip.mkline('', indent='')
+
+	if args:
+		write_docstring_args(args, snip)
+
+	snip += 'Raises'
+	snip += '------'
+	snip += 'TODO'
+	snip.rv += '\n' + snip.mkline('', indent='')
+
+	snip += 'Attributes'
+	snip += '----------'
+	if len(attrs) < 1:
+		snip += 'TODO'
+	else:
+		for attr in attrs:
+			snip += '%s: TODO' % attr
+			snip >> 1
+			snip += 'TODO'
+			snip << 1
+	snip.rv += '\n' + snip.mkline('', indent='')
+
+	snip += 'Examples'
+	snip += '--------'
+	snip += '..doctest::'
+	snip.rv += '\n' + snip.mkline('', indent='')
+	snip >> 1
+	snip += '>>> TODO'
+	snip << 1
+
+	snip += '"""'
+
+
+def get_dir_and_file_name(snip):
+	return os.getcwd().split(os.sep)[-1] + '.' + snip.basename
+
+def generate_anon_docstring(lines):
+	edited_lines = []
+	tabstop = 1
+	for line in lines:
+		if "TODO" in line:
+			# add tabstop
+			edited_lines.append(
+				line.replace("TODO", "${%d:TODO}" % tabstop))
+			tabstop += 1
+			continue
+		edited_lines.append(line)
+	return '\n'.join(edited_lines)
+
+def expand_docstring(snip):
+	docstring = []
+	doc_start = None
+	doc_end = None
+	for line_n in range(snip.snippet_start[0], snip.snippet_end[0] + 1):
+		line = snip.buffer[line_n]
+		if line.strip() == '"""':
+			if doc_start is not None:
+				doc_end = line_n
+				break
+			doc_start = line_n
+			continue
+		if doc_start is None:
+			continue
+		docstring.append(line)
+	if doc_start is None or doc_end is None:
+		# malformed docstring
+		return
+	snip.buffer[doc_start + 1:doc_end] = [""]
+	snip.cursor.set(doc_start + 1, 0)
+	snip.expand_anon(generate_anon_docstring(docstring))
+
+def replace_docstring(snip, test=False):
+	c_line = snip.line - 1
+	start_pos = None
+	content = []
+	while start_pos is None and c_line >= 0 :
+		line = snip.buffer[c_line]
+		if line.strip() == '"""':
+			start_pos = c_line
+		content.insert(0, line)
+		c_line -= 1
+	if test:
+		return start_pos is not None
+	snip.buffer[start_pos:snip.line] = [""]
+	# snip.cursor.set(start_pos + 1, 0)
+	# vim.command('normal j')
+	snip.expand_anon(generate_anon_docstring(content))
+
+def expand_elif(snip):
+	text = []
+	tabstop = 1
+	for _ in range(int(snip.buffer[snip.line].strip())):
+		text.append("elif ${%d:condition}:" % tabstop)
+		tabstop += 1
+		text.append("	    ${%d:pass}" % tabstop)
+		tabstop += 1
+	snip.buffer[snip.line] = ""
+	snip.expand_anon('\n'.join(text))
+
+endglobal
+
+###############
+#  functions  #
+###############
+
+post_jump "if snip.tabstop == 0: expand_docstring(snip)"
+snippet def "function with docstring" bms
+def ${1:function}(`!p
+if snip.indent:
+	snip.rv = 'self' + (", " if len(t[2]) else "")`${2:arg1}):
+	`!p
+snip >> 1
+write_function_docstring(snip, get_args(t[2])) `
+	${5:${VISUAL:pass}}
+endsnippet
+
+snippet def_ "private function" bms
+def _${1:function}(`!p
+	snip.rv = 'self' + (", " if len(t[2]) else "")`${2:arg1}):
+	${3:${VISUAL:pass}}
+endsnippet
+
+#############
+#  classes  #
+#############
+
+post_jump "if snip.tabstop == 0: expand_docstring(snip)"
+snippet class "class with docstring" bms
+class ${1:MyClass}(${2:object}):
+
+	`!p snip >> 1; write_class_docstring(snip, get_attrs(t[3]), get_args(t[4]))`
+
+	${3:attributes}
+
+	def __init__(self$4):`!p
+snip >> 2;
+write_init_body(get_args(t[4]), t[2], snip)`
+		$5
+$0
+endsnippet
+
+#############################
+#  dragonfly grammar rules  #
+#############################
+
+snippet map "dragonfly.MappingRule" bms
+class ${1:Some}Rule(MappingRule):
+
+	"""${2:TODO}."""
+${4:	    
+	exported = ${5:False}}
+
+	def __init__(self, *args, **kwargs):
+		self.mapping = {
+			${3:_("command"): Text("value"),}$0
+			}
+		MappingRule.__init__(self, *args, **kwargs)
+endsnippet
+
+snippet compound "dragonfly.CompoundRule" bms
+class ${1:Some}Rule(CompoundRule):
+
+	"""${2:TODO}."""
+${9:	    
+	exported = ${10:False}}
+
+	def __init__(self, *args, **kwargs):
+		self.spec = _("${3:command}")
+		self.extras = [
+			${4:Alternative(),}$0
+			]
+		CompoundRule.__init__(self, *args, **kwargs)
+
+	def value(self, node):
+		${5:return ${6:Text}(join_actions(' ', extract_values(node, (
+			${7:SomeRule}), recurse=True)))}
+
+	def _process_recognition(self, node, extras):
+		${8:self.value(node).execute()}
+endsnippet
+
+snippet choice "dragonfly.Choice" bms
+Choice(name='${1:identifier}', choices={
+	${2:_("${3:spoken text}"): "${4:value}",}$0
+	})
+endsnippet
+
+snippet sequence "dragonfly.Sequence" bms
+Sequence(name='${1:identifier}', children=(
+	${3:_("${4:spoken text}"),}$0
+	))
+endsnippet
+
+snippet alternative "dragonfly.Alternative" bms
+Alternative(name='${1:identifier}', children=(
+	${3:RuleRef(rule=${4:SomeRule}()),}$0
+	))
+endsnippet
+
+snippet optional "dragonfly.Optional" bms
+Optional(
+	name='${1:identifier}',
+	child=${2:RuleRef(rule=${3:SomeRule}())})
+endsnippet
+
+snippet repetition "dragonfly.Repetition" bms
+Repetition(
+	name='${1:identifier}',
+	child=${2:RuleRef(rule=${3:SomeRule}())},
+	min=${4:1},
+	max=${5:5})
+endsnippet
+
+snippet literal "dragonfly.Literal" bms
+Literal(name='${1:identifier}', text=_('${2:text}'))
+endsnippet
+
+snippet /rule ref/ "dragonfly.RuleRef" bms
+RuleRef(name='${1:identifier}', rule=${2:SomeRule}())
+endsnippet
+
+snippet /list ref/ "dragonfly.ListRef" bms
+ListRef(name='${1:identifier}', list=${2:[]})
+endsnippet
+
+snippet /dict ref/ "dragonfly.DictListRef" bms
+DictListRef(name='${1:identifier}', dict=${3:\{\}})
+endsnippet
+
+snippet dictation "dragonfly.Dictation" bms
+Dictation(name='${1:identifier}')
+endsnippet
+
+snippet _ "gettext translation key, value pair" bms
+_("${1:translatable}"): ${2:Text}("${3:value}"),
+endsnippet
+
+################
+#  docstrings  #
+################
+
+snippet #! "Start of module doc" bms
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+${1:Short summary.}
+
+${2:Longer summary.}${3:
+
+Examples
+--------
+
+..doctest::
+
+	>> ${4:test}}
+"""
+endsnippet
+
+# seriously buggy, get really confused if you trigger it
+# on the opening triple quote (negative indents)
+pre_expand "replace_docstring(snip)"
+snippet """ "edit docstring" "replace_docstring(snip, True)" bems
+endsnippet
+
+# also buggy
+snippet " "Simple docstring" bms
+"""`!p if '\n' in t[1]: snip += ""`${1:Text.}`!p if '\n' in t[1]: snip += ""`"""
+endsnippet
+
+###########
+#  loops  #
+###########
+snippet for "for loop" bs
+for ${1:name} in ${2:iterator}:
+	${3:${VISUAL:pass}}
+endsnippet
+
+snippet fori "for loop enumerated" bs
+for i, ${1:name} in enumerate(${2:iterator}):
+	${3:${VISUAL:pass}}
+endsnippet
+
+snippet listc "list comprehension" bs
+[${1:${VISUAL:value}} for ${2:name} in ${3:iterator}${4: if ${5:condition}}]
+endsnippet
+
+snippet dictc "dict comprehension" bs
+{${1:${VISUAL:key}}:${2:value} for ${3:name} in ${4:iterator}${5: if ${6:condition}}}
+endsnippet
+
+################
+#  exceptions  #
+################
+
+snippet try "try: ... except: ..." bms
+try:
+	${1:${VISUAL:pass}}
+except ${2:Exception} as ${3:error}:
+	${4:raise error}${5:
+else:
+	${6:pass}}${7:
+finally:
+	${8:pass}}
+endsnippet
+
+snippet if "if: ... elif: ... else: ..." bms
+if ${1:condition}:
+	${2:${VISUAL:pass}}${3:
+elif ${4:condition}:
+	${5:pass}${6:
+elif ${7:condition}:
+	${8:pass}${9:
+elif ${10:condition}:
+	${11:pass}}}}${12:
+else:
+	${13:pass}}
+endsnippet
+
+post_jump "if snip.tabstop == 0: expand_elif(snip)"
+snippet /elif(\d+)/ "elif chain" rbms
+`!p snip.rv = match.group(1)`
+endsnippet
