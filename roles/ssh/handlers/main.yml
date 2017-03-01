@@ -1,0 +1,14 @@
+- name: restart ssh debian
+  service:
+    name: sshd
+    state: restarted
+  become: true
+  when:
+    - ansible_hostname in groups['debian']
+  listen: restart ssh
+- name: restart ssh slackware
+  command: /etc/rc.d/rc.sshd restart
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+  listen: restart ssh
