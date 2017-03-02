@@ -8,7 +8,7 @@
     - ansible_hostname in groups['slackware']
 - name: create vim plugin directory
   file:
-    path: /etc/vim/plugin
+    path: /etc/vim/bundle
     state: directory
     mode: 0755
   become: true
@@ -18,7 +18,7 @@
 - name: update vim plugins
   hg:
     repo: "{{ item.repo }}"
-    dest: "/etc/vim/plugin/{{ item.dest }}"
+    dest: "/etc/vim/bundle/{{ item.dest }}"
   become: true
   when:
     - ansible_hostname in groups['unix']
@@ -63,7 +63,7 @@
 - name: "update vim 8 plugins"
   hg:
     repo: "{{ item.repo }}"
-    dest: "/etc/vim/plugin/{{ item.dest }}"
+    dest: "/etc/vim/bundle/{{ item.dest }}"
   become: true
   when:
     - vim8.rc == 0
@@ -73,7 +73,7 @@
     - {'dest': 'YouCompleteMe', 'repo': 'git+ssh://git@github.com/Valloric/YouCompleteMe'}
 - name: "delete vim 8 plugins"
   file:
-    path: "/etc/vim/plugin/{{ item }}"
+    path: "/etc/vim/bundle/{{ item }}"
     state: absent
   become: true
   with_items:
@@ -86,7 +86,7 @@
   template:
     src: "vimrc.j2"
     backup: yes
-    dest: "/etc/vimrc"
+    dest: "/etc/vim/vimrc"
   become: true
   when:
     - ansible_hostname in groups['unix']
@@ -98,6 +98,19 @@
   become: true
   with_items:
     - snipps
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+- name: transfer user vimrc
+  copy:
+    src: vimrc
+    dest: "~/.vimrc"
+    force: no
+  become: true
+  become_user: "{{ item }}"
+  with_items:
+    - root
+    - nihlaeth
   when:
     - ansible_hostname in groups['unix']
     - ansible_hostname in groups['mine']

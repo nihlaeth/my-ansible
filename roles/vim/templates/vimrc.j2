@@ -1,6 +1,6 @@
 " {{ ansible_managed }} - do not edit manually
-runtime bundle/vim-pathogen/autoload/pathogen.vim
-execute pathogen#infect()
+source /etc/vim/bundle/vim-pathogen/autoload/pathogen.vim
+execute pathogen#infect('/etc/vim/bundle/{}', '~/.vim/bundle/{}')
 
 let python_highlight_all=1
 syntax on
