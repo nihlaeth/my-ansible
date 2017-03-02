@@ -1,0 +1,63 @@
+- name: update zsh slackware
+  slackpkg:
+    name: zsh
+    state: latest
+    update_cache: true
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- name: create zsh directory
+  file:
+    path: "/etc/zsh/{{ item }}"
+    state: directory
+    mode: 0755
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+  with_items:
+    - ''
+    - 'plugins'
+    - 'custom'
+    - 'custom/themes'
+    - 'custom/plugins'
+- name: update zsh plugins
+  hg:
+    repo: "{{ item.repo }}"
+    dest: "/etc/zsh/plugins/{{ item.dest }}"
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+  with_items:
+      - {'dest': 'zsh-git-prompt', 'repo': 'git+ssh://git@github.com/olivierverdier/zsh-git-prompt'}
+      - {'dest': 'zsh-syntax-highlighting', 'repo': 'git+ssh://git@github.com/zsh-users/zsh-syntax-highlighting'}
+      - {'dest': 'oh-my-zsh', 'repo': 'git+ssh://git@github.com/robbyrussell/oh-my-zsh'}
+- name: write zsh config
+  template:
+    src: "{{ item.template }}.j2"
+    backup: yes
+    dest: "/etc/zsh/{{ item.destination }}/{{ item.template }}"
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+  with_items:
+      - {'template': 'zshrc', 'destination': ''}
+      - {'template': 'zshenv', 'destination': ''}
+      - {'template': 'nihlaeth.zsh-theme', 'destination': 'custom/themes'}
+- name: transfer user zsh files
+  copy:
+    src: "{{ item.file }}"
+    dest: "~/.{{ item.file }}"
+    force: no
+  become: true
+  become_user: "{{ item.user }}"
+  with_items:
+    - {'user': root, 'file': zshrc}
+    - {'user': root, 'file': zshenv}
+    - {'user': nihlaeth, 'file': zshrc}
+    - {'user': nihlaeth, 'file': zshenv}
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
