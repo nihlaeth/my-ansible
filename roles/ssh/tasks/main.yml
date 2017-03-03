@@ -44,9 +44,7 @@
   become_user: "{{ item }}"
   become: true
   when: ansible_hostname in groups['unix']
-  with_items:
-    - root
-    - nihlaeth
+  with_items: "{{ managed_users }}"
 - name: generate ssh key
   shell: 'ssh-keygen -f ~/.ssh/{{ ansible_hostname }} -q -N ""'
   args:
@@ -55,32 +53,28 @@
   become: true
   when:
     - ansible_hostname in groups['unix']
-  with_items:
-    - root
-    - nihlaeth
+  with_items: "{{ managed_users }}"
 - name: Read SSH public key to authorize github
   shell: "cat ~/.ssh/{{ ansible_hostname }}.pub"
   become_user: "{{ item }}"
   become: true
   when: ansible_hostname in groups['unix']
-  with_items:
-    - root
-    - nihlaeth
+  with_items: "{{ managed_users }}"
   register: ssh_pub_key
   changed_when: False
 - name: Authorize key with GitHub
   local_action:
     module: github_key
-    name: "{{ ansible_hostname }}-{{ item.user }}"
+    name: "{{ ansible_hostname }}-{{ item.0 }}"
     token: '{{ github_access_token }}'
-    pubkey: '{{ item.key }}'
-  become_user: "{{ item.user }}"
+    pubkey: '{{ item.1.stdout }}'
+  become_user: "{{ item.0 }}"
   become: true
   when:
     - ansible_hostname in groups['unix']
-  with_items:
-    - {'user': 'root', 'key': "{{ ssh_pub_key.results[0].stdout }}"}
-    - {'user': 'nihlaeth', 'key': "{{ ssh_pub_key.results[1].stdout }}"}
+  with_together:
+    - "{{ managed_users }}"
+    - "{{ ssh_pub_key.results }}"
   ignore_errors: yes
 - name: write ssh config
   template:
@@ -94,6 +88,4 @@
   when:
     - ansible_hostname in groups['local']
     - ansible_hostname in groups['unix']
-  with_items:
-    - root
-    - nihlaeth
+  with_items: "{{ managed_users }}"

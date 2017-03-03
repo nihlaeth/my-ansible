@@ -14,7 +14,6 @@
   become: true
   when:
     - ansible_hostname in groups['unix']
-    - ansible_hostname in groups['mine']
   with_items:
     - ''
     - 'plugins'
@@ -28,7 +27,6 @@
   become: true
   when:
     - ansible_hostname in groups['unix']
-    - ansible_hostname in groups['mine']
   with_items:
       - {'dest': 'zsh-git-prompt', 'repo': 'git+ssh://git@github.com/olivierverdier/zsh-git-prompt'}
       - {'dest': 'zsh-syntax-highlighting', 'repo': 'git+ssh://git@github.com/zsh-users/zsh-syntax-highlighting'}
@@ -38,7 +36,7 @@
     zshenv_content: "{{ lookup('template', 'templates/zshenv.j2') }}"
 - name: write zshrc
   blockinfile:
-    dest: "/etc/zsh/zshrc"
+    dest: "/etc/zsh/zshrc{{ nondestructive_location }}"
     content: '{{ zshrc_content }}'
     state: present
     create: yes
@@ -46,10 +44,9 @@
   become: true
   when:
     - ansible_hostname in groups['unix']
-    - ansible_hostname in groups['mine']
 - name: write zshenv
   blockinfile:
-    dest: "/etc/zsh/zshenv"
+    dest: "/etc/zsh/zshenv{{ nondestructive_location }}"
     content: '{{ zshenv_content }}'
     state: present
     create: yes
@@ -57,7 +54,6 @@
   become: true
   when:
     - ansible_hostname in groups['unix']
-    - ansible_hostname in groups['mine']
 - name: write zsh theme
   template:
     src: "{{ item.template }}.j2"
@@ -66,7 +62,6 @@
   become: true
   when:
     - ansible_hostname in groups['unix']
-    - ansible_hostname in groups['mine']
   with_items:
       - {'template': 'nihlaeth.zsh-theme', 'destination': 'custom/themes'}
 - name: fix user zsh files
@@ -74,15 +69,13 @@
     dest: "~/.zsh{{ item[0] }}"
     create: yes
     insertbefore: BOF
-    line: "source /etc/zsh/zsh{{ item[0] }}"
+    line: "source /etc/zsh/zsh{{ item[0] }}{{ nondestructive_location }}"
     state: present
   become: true
   become_user: "{{ item[1] }}"
   with_nested:
     - - rc
       - env
-    - - root
-      - nihlaeth
+    - "{{ managed_users }}"
   when:
     - ansible_hostname in groups['unix']
-    - ansible_hostname in groups['mine']

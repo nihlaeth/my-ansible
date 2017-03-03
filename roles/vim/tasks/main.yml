@@ -14,7 +14,6 @@
   become: true
   when:
     - ansible_hostname in groups['unix']
-    - ansible_hostname in groups['mine']
 - name: update vim plugins
   hg:
     repo: "{{ item.repo }}"
@@ -22,7 +21,6 @@
   become: true
   when:
     - ansible_hostname in groups['unix']
-    - ansible_hostname in groups['mine']
   with_items:
     - {'dest': 'syntastic', 'repo': 'git+ssh://git@github.com/scrooloose/syntastic'}
     - {'dest': 'vim-abolish', 'repo': 'git+ssh://git@github.com/tpope/vim-abolish.git'}
@@ -57,7 +55,6 @@
   changed_when: False
   when:
     - ansible_hostname in groups['unix']
-    - ansible_hostname in groups['mine']
 - name: "update vim 8 plugins"
   hg:
     repo: "{{ item.repo }}"
@@ -66,7 +63,6 @@
   when:
     - vim8.rc == 0
     - ansible_hostname in groups['unix']
-    - ansible_hostname in groups['mine']
   with_items:
     - {'dest': 'YouCompleteMe', 'repo': 'git+ssh://git@github.com/Valloric/YouCompleteMe'}
     - {'dest': 'ultisnips', 'repo': 'git+ssh://git@github.com/SirVer/ultisnips'}
@@ -83,7 +79,6 @@
   when:
     - vim8.rc != 0
     - ansible_hostname in groups['unix']
-    - ansible_hostname in groups['mine']
 - name: transfer vim snippets
   copy:
     src: "{{ item }}"
@@ -94,12 +89,11 @@
   when:
     - vim8.rc != 0
     - ansible_hostname in groups['unix']
-    - ansible_hostname in groups['mine']
 - set_fact:
     vimrc_content: "{{ lookup('template', 'templates/vimrc.j2') }}"
 - name: write vim config
   blockinfile:
-    dest: "/etc/vim/vimrc"
+    dest: "/etc/vim/vimrc{{ nondestructive_location }}"
     content: '{{ vimrc_content }}'
     state: present
     create: yes
@@ -107,19 +101,15 @@
   become: true
   when:
     - ansible_hostname in groups['unix']
-    - ansible_hostname in groups['mine']
 - name: fix user vimrc
   lineinfile:
     dest: "~/.vimrc"
     create: yes
     insertbefore: BOF
-    line: "source /etc/vim/vimrc"
+    line: "source /etc/vim/vimrc{{ nondestructive_location }}"
     state: present
   become: true
   become_user: "{{ item }}"
-  with_items:
-    - root
-    - nihlaeth
+  with_items: "{{ managed_users }}"
   when:
     - ansible_hostname in groups['unix']
-    - ansible_hostname in groups['mine']

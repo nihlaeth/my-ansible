@@ -1,1 +1,4 @@
 github_access_token: "{{ vault_github_access_token }}"
+managed_users:
+  - nihlaeth
+nondestructive_location: ".custom"
