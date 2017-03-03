@@ -35,7 +35,7 @@
     - ansible_hostname in groups['debian']
 - name: install git and subversion slackware
   slackpkg:
-    name: git,subversion,icu4c,apr-util,neon,sqlite
+    name: git,subversion,icu4c,apr,apr-util,neon,sqlite
     state: present
   become: true
   when:
