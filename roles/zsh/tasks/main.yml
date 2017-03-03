@@ -33,7 +33,32 @@
       - {'dest': 'zsh-git-prompt', 'repo': 'git+ssh://git@github.com/olivierverdier/zsh-git-prompt'}
       - {'dest': 'zsh-syntax-highlighting', 'repo': 'git+ssh://git@github.com/zsh-users/zsh-syntax-highlighting'}
       - {'dest': 'oh-my-zsh', 'repo': 'git+ssh://git@github.com/robbyrussell/oh-my-zsh'}
-- name: write zsh config
+- set_fact:
+    zshrc_content: "{{ lookup('template', 'templates/zshrc.j2') }}"
+    zshenv_content: "{{ lookup('template', 'templates/zshenv.j2') }}"
+- name: write zshrc
+  blockinfile:
+    dest: "/etc/zsh/zshrc"
+    content: '{{ zshrc_content }}'
+    state: present
+    create: yes
+    marker: '# {mark} ANSIBLE MANAGED BLOCK'
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+- name: write zshenv
+  blockinfile:
+    dest: "/etc/zsh/zshenv"
+    content: '{{ zshenv_content }}'
+    state: present
+    create: yes
+    marker: '# {mark} ANSIBLE MANAGED BLOCK'
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+- name: write zsh theme
   template:
     src: "{{ item.template }}.j2"
     backup: yes
@@ -43,21 +68,21 @@
     - ansible_hostname in groups['unix']
     - ansible_hostname in groups['mine']
   with_items:
-      - {'template': 'zshrc', 'destination': ''}
-      - {'template': 'zshenv', 'destination': ''}
       - {'template': 'nihlaeth.zsh-theme', 'destination': 'custom/themes'}
-- name: transfer user zsh files
-  copy:
-    src: "{{ item.file }}"
-    dest: "~/.{{ item.file }}"
-    force: no
+- name: fix user zsh files
+  lineinfile:
+    dest: "~/.zsh{{ item[0] }}"
+    create: yes
+    insertbefore: BOF
+    line: "source /etc/zsh/zsh{{ item[0] }}"
+    state: present
   become: true
-  become_user: "{{ item.user }}"
-  with_items:
-    - {'user': root, 'file': zshrc}
-    - {'user': root, 'file': zshenv}
-    - {'user': nihlaeth, 'file': zshrc}
-    - {'user': nihlaeth, 'file': zshenv}
+  become_user: "{{ item[1] }}"
+  with_nested:
+    - - rc
+      - env
+    - - root
+      - nihlaeth
   when:
     - ansible_hostname in groups['unix']
     - ansible_hostname in groups['mine']
