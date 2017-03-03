@@ -1,5 +1,9 @@
 [mine:children]
 slackware
+also_mine
+
+[also_mine]
+athena
 
 [unix:children]
 linux
@@ -44,22 +48,13 @@ morrighan
 dayea
 lakshmi
 
-[local]
-iris
-brighid
-freya
-arthemis
-aine
-seshata
-epona
-morrighan
-dayea
-lakshmi
-cerridwen
-hera
-yemanja
-pele
-persephone
+[local:children]
+slackware
+also_local
+
+[also_local]
 echo
 athena
-eileen
+
+[wordpress]
+inanna
