@@ -1,0 +1,26 @@
+- name: update screen slackware
+  slackpkg:
+    name: screen
+    state: latest
+    update_cache: true
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- name: set screenrc vbell
+  replace:
+    path: /etc/screenrc
+    regexp: "^vbell (on|off)$"
+    replace: "vbell off"
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+- name: set hardstatus block in screenrc
+  blockinfile:
+    path: /etc/screenrc
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    content: |
+      hardstatus off
+      hardstatus alwayslastline
+      hardstatus string '%{= kG}[ %{G}%H %{g}][%= %{= kw}%?%-Lw%?%{r}(%{W}%n*%f%t%?(%u)%?%{r})%{w}%?%+Lw%?%?%= %{g}][%{B} %m-%d %{W} %c %{g}]'
+      term xterm
