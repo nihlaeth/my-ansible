@@ -1,0 +1,3 @@
+- hosts: mine
+  roles:
+    - remove_puppet

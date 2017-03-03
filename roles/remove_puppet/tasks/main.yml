@@ -1,0 +1,26 @@
+- name: kill puppet daemon
+  command: pkill -KILL puppet
+  become: true
+  register: result
+  changed_when: result.rc == 0
+  failed_when: False
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+- name: remove puppet from rc.local
+  lineinfile:
+    path: /etc/rc.d/rc.local
+    state: absent
+    regexp: '^puppet.*'
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+    - ansible_hostname in groups['mine']
+- name: uninstall puppet
+  gem:
+    name: puppet
+    state: absent
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+    - ansible_hostname in groups['mine']
