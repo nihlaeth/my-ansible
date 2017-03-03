@@ -1,3 +1,12 @@
 - hosts: mine
+  vars_prompt:
+    - name: "confirm"
+      prompt: "This is a destructive action, are you really sure you want to continue? (type yes)"
+      private: no
   roles:
     - remove_puppet
+    - remove_dotfiles
+    - ssh
+    - zsh
+    - vim
+    - screen

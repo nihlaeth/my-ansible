@@ -1,0 +1,46 @@
+- name: confirmation
+  assert:
+    that: 'confirm == "yes"'
+- name: remove cron rules
+  cron:
+    job: "{{ item.1 }}"
+    state: absent
+  become: true
+  become_user: "{{ item.0 }}"
+  with_nested:
+    - "{{ managed_users }}"
+    - - "cd /root/.dotfiles && git pull --recurse-submodules > /dev/null"
+      - "cd /root/.dotfiles && /usr/bin/git submodule update --init --recursive > /dev/null"
+  when:
+    - ansible_hostname in groups['unix']
+- name: remove dotfiles
+  file:
+    name: "{{ item.1 }}"
+    state: absent
+  become: true
+  become_user: "{{ item.0 }}"
+  with_nested:
+    - "{{ managed_users }}"
+    - - .ssh/config
+      - .vimrc
+      - .vim
+      - .zshrc
+      - .zshenv
+      - .screenrc
+      - .dotfiles
+      - .hgrc
+      - .hgignore
+  when:
+    - ansible_hostname in groups['unix']
+- name: remove global configuration
+  file:
+    name: "/etc/{{ item }}"
+    state: absent
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+  with_items:
+    - vim/vimrc
+    - zsh/zshrc
+    - zsh/zshenv
+
