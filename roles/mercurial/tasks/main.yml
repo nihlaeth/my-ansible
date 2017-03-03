@@ -26,6 +26,13 @@
   become: true
   when:
     - ansible_hostname in groups['slackware']
+- name: remove mercurial debian
+  apt:
+    name: mercurial
+    state: absent
+  become: true
+  when:
+    - ansible_hostname in groups['debian']
 - name: install git and subversion slackware
   slackpkg:
     name: git,subversion,icu4c,apr-util,neon,sqlite
@@ -33,7 +40,14 @@
   become: true
   when:
     - ansible_hostname in groups['slackware']
-- name: install git and subversion slackware
+- name: install git and subversion debian
+  apt:
+    name: git,subversion,libaprutil1-dev,sqlite,python-subvertpy,hgsubversion
+    state: present
+  become: true
+  when:
+    - ansible_hostname in groups['debian']
+- name: install git and subversion slackware14.2
   slackpkg:
     name: serf
     state: present
@@ -55,11 +69,15 @@
     name: hgsubversion
     state: latest
   become: true
+  when:
+    - ansible_hostname not in groups['debian']
 - name: install subvertpy
   pip:
     name: subvertpy
     state: latest
   become: true
+  when:
+    - ansible_hostname not in groups['debian']
 - name: fetch mercurial plug-ins
   hg:
     repo: "{{ item.repo }}"

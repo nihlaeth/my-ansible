@@ -13,13 +13,27 @@
   become: true
   when:
     - ansible_hostname in groups['slackware']
-- name: test if pip is installed
+- name: remove pip packages debian
+  apt:
+    name: python-pip,python-setuptools
+    state: absent
+  become: true
+  when:
+    - ansible_hostname in groups['debian']
+- name: test if pip is installed slackware
   find:
     paths: /usr/lib64/python2.7/site-packages/pip
   become: true
   register: pip_install
   when:
     - ansible_hostname in groups['slackware']
+- name: test if pip is installed debian
+  find:
+    paths: /usr/local/lib/python2.7/dist-packages/pip
+  become: true
+  register: pip_install
+  when:
+    - ansible_hostname in groups['debian']
 - name: transfer pip packages slackware
   copy:
     src: "{{ item }}"
@@ -28,17 +42,17 @@
   with_items:
     - get-pip.py
   when:
-    - ansible_hostname in groups['slackware']
+    - ansible_hostname in groups['unix']
     - pip_install.matched == 0
-- name: install pip packages slackware
+- name: install pip packages
   command: "python ~/{{ item }}"
   become: true
   with_items:
     - get-pip.py
   when:
-    - ansible_hostname in groups['slackware']
+    - ansible_hostname in groups['unix']
     - pip_install.matched == 0
-- name: remove pip packag files slackware
+- name: remove pip package files
   file:
     path: "~/{{ item }}"
     state: absent
@@ -46,7 +60,7 @@
   with_items:
     - get-pip.py
   when:
-    - ansible_hostname in groups['slackware']
+    - ansible_hostname in groups['unix']
     - pip_install.matched == 0
 - name: upgrade python packaging tools
   pip:
