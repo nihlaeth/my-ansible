@@ -7,6 +7,7 @@
   become: true
   when:
     - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['wordpress']
 - name: update wp-cli
   command: wp cli update
   become: true
@@ -14,6 +15,7 @@
   changed_when: '"WP-CLI is at the latest version." not in result.stdout'
   when:
     - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['wordpress']
 - name: fetch wordpress plug-ins
   shell: "cat /etc/pyvhost/wordpress | grep -o '/home/[^ ]\\+'"
   register: wordpress_installations
@@ -21,6 +23,7 @@
   changed_when: False
   when:
     - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['wordpress']
 - name: update wordpress
   shell: "sudo -u $(stat -c %U .) -- wp {{ item[1].command }}"
   args:
@@ -30,6 +33,7 @@
   changed_when: item[1].unchanged not in result.stdout
   when:
     - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['wordpress']
   with_nested:
     - "{{ wordpress_installations.stdout_lines }}"
     - - {'command': "core update", 'unchanged': 'WordPress is up to date.'}

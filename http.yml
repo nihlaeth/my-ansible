@@ -1,0 +1,4 @@
+- hosts: http
+  roles:
+    - http
+    - wordpress

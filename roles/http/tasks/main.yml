@@ -1,0 +1,15 @@
+- name: upgrade web packages slackware
+  slackpkg:
+    name: mysql,php
+    state: latest
+    update_cache: true
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- name: upgrade web packages debian
+  apt:
+    name: nginx,php,mysql
+    state: latest
+  become: true
+  when:
+    - ansible_hostname in groups['debian']
