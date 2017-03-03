@@ -10,6 +10,8 @@
 - name: update wp-cli
   command: wp cli update
   become: true
+  register: result
+  changed_when: '"WP-CLI is at the latest version." not in result.stdout'
   when:
     - ansible_hostname in groups['unix']
 - name: fetch wordpress plug-ins
