@@ -1,0 +1,36 @@
+- name: install wp-cli
+  get_url:
+    url: "https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar"
+    dest: "/usr/bin/wp"
+    mode: "u=rwx,g=rx,o=rx"
+    force: no
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+- name: update wp-cli
+  command: wp cli update
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+- name: fetch wordpress plug-ins
+  shell: "cat /etc/pyvhost/wordpress | grep -o '/home/[^ ]\\+'"
+  register: wordpress_installations
+  # failed_when: False
+  changed_when: False
+  when:
+    - ansible_hostname in groups['unix']
+- name: update wordpress
+  shell: "sudo -u $(stat -c %U .) -- wp {{ item[1].command }}"
+  args:
+    chdir: "{{ item[0] }}"
+  become: true
+  register: result
+  changed_when: item[1].unchanged not in result.stdout
+  when:
+    - ansible_hostname in groups['unix']
+  with_nested:
+    - "{{ wordpress_installations.stdout_lines }}"
+    - - {'command': "core update", 'unchanged': 'WordPress is up to date.'}
+      - {'command': "core update-db", 'unchanged': 'database already at latest db version'}
+      - {'command': "plugin update --all", 'unchanged': 'Plugin already updated.'}
+      - {'command': "theme update --all", 'unchanged': 'Theme already updated.'}
