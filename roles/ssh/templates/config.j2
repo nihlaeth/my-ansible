@@ -1,4 +1,3 @@
-# {{ ansible_managed }} - do not edit manually
 {% for host in groups['linux'] %}
 Host {{ host }}
 HostName {{ hostvars[host]['ansible_host'] }}
