@@ -21,8 +21,8 @@
   when:
     - ansible_hostname in groups['debian']
 - name: test if pip is installed
-  find:
-    paths: "{{ item }}"
+  stat:
+    path: "{{ item }}"
   become: true
   register: pip_install
   with_items:
@@ -30,6 +30,8 @@
     - /usr/local/lib/python2.7/dist-packages/pip
   when:
     - ansible_hostname in groups['slackware']
+- debug:
+    var: pip_install
 - name: transfer pip packages slackware
   copy:
     src: "{{ item }}"
@@ -39,7 +41,7 @@
     - get-pip.py
   when:
     - ansible_hostname in groups['unix']
-    - pip_install.results|sum(attribute='matched') == 0
+    - pip_install.results|sum(attribute='stat.exists') == 0
 - name: install pip packages
   command: "python2 ~/{{ item }}"
   become: true
@@ -47,7 +49,7 @@
     - get-pip.py
   when:
     - ansible_hostname in groups['unix']
-    - pip_install.results|sum(attribute='matched') == 0
+    - pip_install.results|sum(attribute='stat.exists') == 0
 - name: remove pip package files
   file:
     path: "~/{{ item }}"
@@ -57,7 +59,7 @@
     - get-pip.py
   when:
     - ansible_hostname in groups['unix']
-    - pip_install.results|sum(attribute='matched') == 0
+    - pip_install.results|sum(attribute='stat.exists') == 0
 - name: upgrade python packaging tools
   pip:
     name: "{{ item }}"
