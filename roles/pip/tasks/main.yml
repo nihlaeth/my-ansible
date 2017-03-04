@@ -30,8 +30,28 @@
     - /usr/local/lib/python2.7/dist-packages/pip
   when:
     - ansible_hostname in groups['slackware']
-- debug:
-    var: pip_install
+- name: test if pip working
+  command: which pip2
+  failed_when: False
+  changed_when: False
+  register: pip_working
+  when:
+    - ansible_hostname in groups['unix']
+- name: remove broken pip installation
+  shell: "rm -r {{ item }}"
+  failed_when: False
+  register: result
+  changed_when: result.rc == 0
+  become: true
+  with_items:
+    - /usr/lib64/python2.7/site-packages/pip
+    - /usr/lib64/python2.7/site-packages/pip-[0-9]\+.*.dist-info
+    - /usr/lib64/python2.7/site-packages/setuptools
+    - /usr/lib64/python2.7/site-packages/setuptools-[0-9]\+.*.dist-info
+  when:
+    - ansible_hostname in groups['slackware']
+    - pip_install.results|sum(attribute='stat.exists') != 0
+    - pip_working.rc != 0
 - name: transfer pip packages slackware
   copy:
     src: "{{ item }}"
@@ -41,7 +61,7 @@
     - get-pip.py
   when:
     - ansible_hostname in groups['unix']
-    - pip_install.results|sum(attribute='stat.exists') == 0
+    - pip_install.results|sum(attribute='stat.exists') == 0 or pip_working.rc != 0
 - name: install pip packages
   command: "python2 ~/{{ item }}"
   become: true
@@ -49,7 +69,7 @@
     - get-pip.py
   when:
     - ansible_hostname in groups['unix']
-    - pip_install.results|sum(attribute='stat.exists') == 0
+    - pip_install.results|sum(attribute='stat.exists') == 0 or pip_working.rc != 0
 - name: remove pip package files
   file:
     path: "~/{{ item }}"
@@ -59,7 +79,7 @@
     - get-pip.py
   when:
     - ansible_hostname in groups['unix']
-    - pip_install.results|sum(attribute='stat.exists') == 0
+    - pip_install.results|sum(attribute='stat.exists') == 0 or pip_working.rc != 0
 - name: upgrade python packaging tools
   pip:
     name: "{{ item }}"
