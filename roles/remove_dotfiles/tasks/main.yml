@@ -1,18 +1,26 @@
 - name: confirmation
   assert:
     that: 'confirm == "yes"'
-- name: remove cron rules
-  cron:
-    job: "{{ item.1 }}"
-    state: absent
+- name: fetch cron rules
+  command: crontab -l
   become: true
-  become_user: "{{ item.0 }}"
-  with_nested:
-    - "{{ managed_users }}"
-    - - "cd /root/.dotfiles && git pull --recurse-submodules > /dev/null"
-      - "cd /root/.dotfiles && /usr/bin/git submodule update --init --recursive > /dev/null"
+  become_user: "{{ item }}"
+  register: cron_content
+  changed_when: False
+  with_items: "{{ managed_users }}"
   when:
     - ansible_hostname in groups['unix']
+- name: remove cron rules
+  shell: "crontab -l | grep -v '.dotfiles' | crontab -"
+  changed_when: true
+  become: true
+  become_user: "{{ item.0 }}"
+  with_together:
+    - "{{ managed_users }}"
+    - "{{ cron_content.results }}"
+  when:
+    - ansible_hostname in groups['unix']
+    - '".dotfiles" in item.1.stdout'
 - name: remove dotfiles
   file:
     name: "~/{{ item.1 }}"
