@@ -1,0 +1,110 @@
+- name: ensure absent from blacklist
+  lineinfile:
+    dest: /etc/slackpkg/blacklist
+    line: kde-l10n-nl
+    state: absent
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- name: ensure package absent
+  slackpkg:
+    name: kde-l10n-nl
+    state: absent
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- name: update package
+  slackpkg:
+    name: kde-l10n-nl
+    state: latest
+    update_cache: true
+  become: true
+  register: result
+  when:
+    - ansible_hostname in groups['slackware']
+- assert:
+    that: "result.changed"
+- name: remove package
+  slackpkg:
+    name: kde-l10n-nl
+    state: absent
+  become: true
+  register: result
+  when:
+    - ansible_hostname in groups['slackware']
+- assert:
+    that: "result.changed"
+- name: install package
+  slackpkg:
+    name: kde-l10n-nl
+    state: present
+  become: true
+  register: result
+  when:
+    - ansible_hostname in groups['slackware']
+- assert:
+    that: "result.changed"
+- name: add to blacklist
+  lineinfile:
+    dest: /etc/slackpkg/blacklist
+    line: kde-l10n-nl
+    state: present
+  register: result
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- assert:
+    that: "result.changed"
+- name: remove package heed blacklist
+  slackpkg:
+    name: kde-l10n-nl
+    state: absent
+    ignore_blacklist: false
+  register: result
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- assert:
+    that: "not result.changed"
+- name: remove package ignore blacklist
+  slackpkg:
+    name: kde-l10n-nl
+    state: absent
+    ignore_blacklist: true
+  register: result
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- assert:
+    that: "result.changed"
+- name: install blacklisted package
+  slackpkg:
+    name: kde-l10n-nl
+    state: present
+  register: result
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- assert:
+    that: "not result.changed"
+- name: update blacklisted package
+  slackpkg:
+    name: kde-l10n-nl
+    state: latest
+  register: result
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- assert:
+    that: "not result.changed"
+- name: remove from blacklist
+  lineinfile:
+    dest: /etc/slackpkg/blacklist
+    line: kde-l10n-nl
+    state: absent
+  register: result
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- assert:
+    that: "result.changed"
