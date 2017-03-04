@@ -87,7 +87,7 @@
   with_items:
     - snipps
   when:
-    - vim8.rc != 0
+    - vim8.rc == 0
     - ansible_hostname in groups['unix']
 - set_fact:
     vimrc_content: "{{ lookup('template', 'templates/vimrc.j2') }}"
