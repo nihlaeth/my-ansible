@@ -15,7 +15,7 @@
     - ansible_hostname in groups['unix']
 - name: remove dotfiles
   file:
-    name: "{{ item.1 }}"
+    name: "~/{{ item.1 }}"
     state: absent
   become: true
   become_user: "{{ item.0 }}"
