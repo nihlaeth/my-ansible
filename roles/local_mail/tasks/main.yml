@@ -1,0 +1,23 @@
+- name: fetch e-mail
+  local_mail:
+    name: "/var/mail/{{ item }}"
+    erase: true
+    max_length: 3000
+  become: true
+  with_items: "{{ managed_users }}"
+  register: mail_content
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']
+- name: send e-mail over telegram
+  telegram:
+    chat_id: "{{ telegram_chat_id }}"
+    token: "{{ telegram_token }}"
+    msg: "Message at {{ ansible_hostname }} in {{ item.0.name }}: {{ item.1 }}"
+  delay: 0.1
+  with_subelements:
+    - "{{ mail_content.results }}"
+    - e-mails
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['mine']

@@ -1,0 +1,4 @@
+- hosts: unix
+  serial: 3
+  roles:
+    - local_mail
