@@ -14,7 +14,7 @@
     chat_id: "{{ telegram_chat_id }}"
     token: "{{ telegram_token }}"
     msg: "Message at {{ ansible_hostname }} in {{ item.0.name }}: {{ item.1 }}"
-  delay: 0.1
+  delay: 0.3
   with_subelements:
     - "{{ mail_content.results }}"
     - e-mails
