@@ -67,6 +67,49 @@
     - {'dest': 'YouCompleteMe', 'repo': 'git+ssh://git@github.com/Valloric/YouCompleteMe'}
     - {'dest': 'ultisnips', 'repo': 'git+ssh://git@github.com/SirVer/ultisnips'}
     - {'dest': 'vim-snippets', 'repo': 'git+ssh://git@github.com/honza/vim-snippets'}
+- name: update you complete me dependencies slackware
+  slackpkg:
+    name: pcre,lzo,cmake,gcc,gccmakedep
+    state: latest
+    update_cache: true
+  become: true
+  when:
+    - vim8.rc == 0
+    - ansible_hostname in groups['slackware']
+- name: "fetch you complete me destinations"
+  command: "pcregrep -o1 '(.*) = \\[git\\](.*)' /etc/vim/bundle/YouCompleteMe/.hgsub"
+  changed_when: False
+  become: true
+  register: you_complete_me_destinations
+  when:
+    - vim8.rc == 0
+    - ansible_hostname in groups['unix']
+- name: "fetch you complete me repositories"
+  command: "pcregrep -o2 '(.*) = \\[git\\](.*)' /etc/vim/bundle/YouCompleteMe/.hgsub"
+  changed_when: False
+  become: true
+  register: you_complete_me_repositories
+  when:
+    - vim8.rc == 0
+    - ansible_hostname in groups['unix']
+- name: "check out you complete me subrepositories"
+  git:
+    repo: "{{ item.1 }}"
+    dest: "/etc/vim/bundle/YouCompleteMe/{{ item.0 }}"
+    recursive: true
+  become: true
+  when:
+    - vim8.rc == 0
+    - ansible_hostname in groups['unix']
+  with_together:
+    - "{{ you_complete_me_destinations.stdout.split('\n') }}"
+    - "{{ you_complete_me_repositories.stdout.split('\n') }}"
+- name: "compile you complete me"
+  shell: "cd /etc/vim/bundle/YouCompleteMe && ./install.py"
+  become: true
+  when:
+    - vim8.rc == 0
+    - ansible_hostname in groups['unix']
 - name: "delete vim 8 plugins"
   file:
     path: "/etc/vim/bundle/{{ item }}"
