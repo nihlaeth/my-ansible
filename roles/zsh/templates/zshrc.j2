@@ -95,8 +95,6 @@ alias sps="slackpkg search"
 alias spu='slackpkg -batch=on -default_answer=n update; slackpkg upgrade-all'
 
 {% endif %}
-ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets)
-
 man() {
     env LESS_TERMCAP_mb=$'\E[01;31m' \
     LESS_TERMCAP_md=$'\E[01;38;5;74m' \
@@ -107,3 +105,6 @@ man() {
     LESS_TERMCAP_us=$'\E[04;38;5;146m' \
     man "$@"
 }
+
+source "/etc/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets)
