@@ -1,0 +1,45 @@
+- name: upgrade kernel
+  slackpkg:
+    name: kernel-firmware,kernel-generic,kernel-headers,kernel-modules,kernel-source,pcre
+    state: latest
+    update_cache: true
+  become: true
+  register: upgraded
+  when:
+    - ansible_hostname in groups['slackware14.0']
+    - ansible_hostname in groups['virtual']
+    - ansible_hostname not in groups['custom_kernel']
+- name: get kernel version
+  shell: "ls /var/log/packages/kernel-generic-* | pcregrep -o1 'kernel-generic-([0-9.]*)-.*'"
+  become: true
+  register: kernel_version
+  changed_when: False
+  when:
+    - upgraded.changed
+    - ansible_hostname in groups['slackware14.0']
+    - ansible_hostname in groups['virtual']
+    - ansible_hostname not in groups['custom_kernel']
+- name: generate mkinitrd command
+  shell: "/usr/share/mkinitrd/mkinitrd_command_generator.sh -k {{ kernel_version.stdout }} > /etc/mkinitrd.conf"
+  become: true
+  when:
+    - upgraded.changed
+    - ansible_hostname in groups['slackware14.0']
+    - ansible_hostname in groups['virtual']
+    - ansible_hostname not in groups['custom_kernel']
+- name: generate initrd
+  command: "sh /etc/mkinitrd.conf"
+  become: true
+  when:
+    - upgraded.changed
+    - ansible_hostname in groups['slackware14.0']
+    - ansible_hostname in groups['virtual']
+    - ansible_hostname not in groups['custom_kernel']
+- name: run lilo
+  command: "lilo"
+  become: true
+  when:
+    - upgraded.changed
+    - ansible_hostname in groups['slackware14.0']
+    - ansible_hostname in groups['virtual']
+    - ansible_hostname not in groups['custom_kernel']

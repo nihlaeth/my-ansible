@@ -48,6 +48,25 @@ morrighan
 dayea
 lakshmi
 
+[virtual]
+iris
+brighid
+freya
+arthemis
+aine
+seshata
+epona
+morrighan
+dayea
+lakshmi
+yemanja
+persephone
+echo
+athena
+
+[custom_kernel]
+brighid
+
 [local:children]
 slackware
 also_local
