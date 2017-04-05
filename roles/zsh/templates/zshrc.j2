@@ -57,6 +57,14 @@ source $ZSH/oh-my-zsh.sh
 
 # User configuration
 
+setopt HIST_VERIFY
+unsetopt SHARE_HISTORY
+setopt EXTENDED_HISTORY
+setopt APPEND_HISTORY
+setopt INC_APPEND_HISTORY
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_REDUCE_BLANKS
+
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
