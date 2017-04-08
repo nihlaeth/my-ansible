@@ -1,1 +1,5 @@
 ansible_host: 192.168.1.13
+managed_users:
+  - root
+  - nihlaeth
+  - dazdya

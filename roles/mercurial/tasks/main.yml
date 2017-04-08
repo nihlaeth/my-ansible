@@ -64,6 +64,11 @@
     name: hg-git
     state: latest
   become: true
+- name: install hg-evolve
+  pip:
+    name: hg-evolve
+    state: latest
+  become: true
 - name: install hgsubversion
   pip:
     name: hgsubversion

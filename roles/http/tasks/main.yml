@@ -6,6 +6,10 @@
   become: true
   when:
     - ansible_hostname in groups['slackware']
+    - ansible_hostname in groups['http']
+  notify:
+    - restart mysql
+    - restart php
 - name: upgrade web packages debian
   apt:
     name: nginx,php,mysql
@@ -13,3 +17,4 @@
   become: true
   when:
     - ansible_hostname in groups['debian']
+    - ansible_hostname in groups['http']
