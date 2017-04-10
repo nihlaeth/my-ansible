@@ -8,6 +8,16 @@
     - ansible_hostname in groups['slackware']
   notify:
     - restart ssh
+- name: make sure ssh X forwarding works
+  slackpkg:
+    name: xauth,libXau,libXext,libXmu,libX11,libxcb,libXdmcp
+    state: latest
+    update_cache: true
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+  notify:
+    - restart ssh
 - name: set ssh port
   replace:
     path: /etc/ssh/sshd_config
@@ -27,6 +37,27 @@
   when:
     - ansible_hostname in groups['unix']
     - ansible_hostname in groups['local']
+  notify:
+    - restart ssh
+- name: enable Xforwarding server
+  replace:
+    path: /etc/ssh/sshd_config
+    regexp: "^#? ?X11Forwarding (yes|no)$"
+    replace: "X11Forwarding yes"
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+  notify:
+    - restart ssh
+- name: enable Xforwarding client
+  replace:
+    path: /etc/ssh/ssh_config
+    regexp: "^#?[ \t]?ForwardX11 (yes|no)$"
+    replace: "ForwardX11 yes"
+  become: true
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['gui']
   notify:
     - restart ssh
 - name: copy our public key to a remote host
