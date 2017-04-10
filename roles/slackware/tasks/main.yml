@@ -1,0 +1,8 @@
+- name: upgrade common packages
+  slackpkg:
+    name: glibc-zoneinfo,bind,libpng,gnutls,ntp
+    state: latest
+    update_cache: true
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']

@@ -1,0 +1,4 @@
+- hosts: slackware
+  roles:
+    - slackware
+    - http

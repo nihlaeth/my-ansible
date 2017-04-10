@@ -1,0 +1,12 @@
+- name: restart php slackware
+  command: /etc/rc.d/rc.php-fpm restart
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+  listen: restart php
+- name: restart mysql slackware
+  command: /etc/rc.d/rc.mysqld restart
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+  listen: restart mysql
