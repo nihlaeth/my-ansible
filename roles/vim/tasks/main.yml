@@ -110,6 +110,7 @@
   when:
     - vim8.rc == 0
     - ansible_hostname in groups['unix']
+  ignore_errors: true
 - name: "delete vim 8 plugins"
   file:
     path: "/etc/vim/bundle/{{ item }}"
