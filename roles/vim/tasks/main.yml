@@ -125,7 +125,7 @@
 - name: transfer vim snippets
   copy:
     src: "{{ item }}"
-    dest: "/etc/vim/{{ item }}"
+    dest: "/etc/vim/"
   become: true
   with_items:
     - snipps
