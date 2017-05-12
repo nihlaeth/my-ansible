@@ -16,10 +16,39 @@
   when:
     - ansible_hostname in groups['unix']
     - ansible_hostname in groups['wordpress']
+- name: install json debian
+  npm:
+    name: json
+    state: latest
+    global: true
+  become: true
+  when:
+    - ansible_hostname in groups['debian']
 - name: fetch wordpress plug-ins
   shell: "cat /etc/pyvhost/wordpress | grep -o '/home/[^ ]\\+'"
   register: wordpress_installations
-  # failed_when: False
+  changed_when: False
+  when:
+    - ansible_hostname in groups['unix']
+    - ansible_hostname in groups['wordpress']
+- name: manage wordpress settings
+  shell: "sudo -u $(stat -c %U .) -- sh -c 'wp option get {{ item[1].option }} | {{ item[1].edit }} | wp option update {{ item[1].option }}'"
+  args:
+    chdir: "{{ item[0] }}"
+  become: true
+  register: result
+  changed_when: '"Success: Updated" in result.stdout'
+  when:
+    - ansible_hostname in groups['debian']
+    - ansible_hostname in groups['wordpress']
+  with_nested:
+    - "{{ wordpress_installations.stdout_lines }}"
+    - - {
+        'option': "itsec_file_change --format=json",
+        'edit': 'json -e "this.enabled = false"'}
+- name: fetch wordpress plug-ins
+  shell: "cat /etc/pyvhost/wordpress | grep -o '/home/[^ ]\\+'"
+  register: wordpress_installations
   changed_when: False
   when:
     - ansible_hostname in groups['unix']

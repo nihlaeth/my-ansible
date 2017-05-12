@@ -1,0 +1,12 @@
+- name: install npm debian
+  apt:
+    name: npm
+    state: latest
+  become: true
+  when:
+    - ansible_hostname in groups['debian']
+- name: symlink node
+  command: ln -s /usr/bin/nodejs /usr/bin/node
+  become: true
+  when:
+    - ansible_hostname in groups['debian']
