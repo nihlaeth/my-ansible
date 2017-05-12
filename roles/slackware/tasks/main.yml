@@ -1,8 +1,34 @@
 - name: upgrade common packages
   slackpkg:
-    name: glibc-zoneinfo,bind,libpng,gnutls,ntp
+    name: glibc-zoneinfo,bind,libpng,gnutls,ntp,expat
     state: latest
     update_cache: true
   become: true
   when:
     - ansible_hostname in groups['slackware']
+- name: upgrade fonts packages
+  slackpkg:
+    name: ghostscript-fonts-std
+    state: latest
+    update_cache: true
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+- name: upgrade X11 packages
+  slackpkg:
+    name: xproto,libXft,libXScrnSaver,libXrender
+    state: latest
+    update_cache: true
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+    - ansible_hostname in groups['gui'] or ansible_hostname in groups['dev']
+- name: upgrade development packages
+  slackpkg:
+    name: gcc,renderproto,kbproto,libpthread-stubs,pixman,xextproto
+    state: latest
+    update_cache: true
+  become: true
+  when:
+    - ansible_hostname in groups['slackware']
+    - ansible_hostname in groups['dev']
